@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ProjectRPG.Dtos.Character;
+using ProjectRPG.Dtos.CharacterDtos;
 using ProjectRPG.Models;
 
 namespace ProjectRPG.Services.CharacterService

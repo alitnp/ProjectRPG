@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ProjectRPG.Models;
 
-namespace ProjectRPG.Dtos.Character
+namespace ProjectRPG.Dtos.CharacterDtos
 {
     public class UpdateCharacterDto
     {

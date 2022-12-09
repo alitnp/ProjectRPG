@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using ProjectRPG.Dtos.Character;
+using ProjectRPG.Dtos.CharacterDtos;
 using ProjectRPG.Models;
 using ProjectRPG.Services.CharacterService;
 
@@ -14,25 +14,25 @@ namespace ProjectRPG.Controllers
     [Route("api/[controller]")]
     public class CharacterController : ControllerBase
     {
-        private readonly ICharacterService _characterService;
+        private readonly ICharacterService _repository;
         private readonly IMapper _mapper;
 
-        public CharacterController(ICharacterService characterService, IMapper mapper)
+        public CharacterController(ICharacterService repository, IMapper mapper)
         {
             this._mapper = mapper;
-            this._characterService = characterService;
+            this._repository = repository;
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ServiceResponse<GetCharacterDto>>> Get(int id)
         {
-            return Ok(await _characterService.GetById(id));
+            return Ok(await _repository.GetById(id));
         }
 
         [HttpGet]
         public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> Get()
         {
-            return Ok(await _characterService.GetAll());
+            return Ok(await _repository.GetAll());
         }
 
         [HttpPost]
@@ -43,7 +43,7 @@ namespace ProjectRPG.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            return Ok(await _characterService.Add(character));
+            return Ok(await _repository.Add(character));
         }
 
         [HttpPut]
@@ -54,7 +54,7 @@ namespace ProjectRPG.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var response = await _characterService.Update(updateCharacter);
+            var response = await _repository.Update(updateCharacter);
             if (response.Data == null)
                 return NotFound(response);
 
@@ -64,7 +64,7 @@ namespace ProjectRPG.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<ServiceResponse>> Delete(int id)
         {
-            var response = await _characterService.Delete(id);
+            var response = await _repository.Delete(id);
             if (!response.Success)
                 return NotFound();
             return Ok();

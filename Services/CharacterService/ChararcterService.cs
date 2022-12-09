@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
-using ProjectRPG.Dtos.Character;
+using Microsoft.EntityFrameworkCore;
+using ProjectRPG.Data;
+using ProjectRPG.Dtos.CharacterDtos;
 using ProjectRPG.Models;
 
 namespace ProjectRPG.Services.CharacterService
@@ -21,18 +23,20 @@ namespace ProjectRPG.Services.CharacterService
             }
         };
         private readonly IMapper _mapper;
+        private readonly DataContext _context;
 
-        public ChararcterService(IMapper mapper)
+        public ChararcterService(IMapper mapper, DataContext context)
         {
+            this._context = context;
             this._mapper = mapper;
         }
 
         public async Task<ServiceResponse<GetCharacterDto>> Add(AddCharacterDto addCharacter)
         {
-            var newCharacter = _mapper.Map<Character>(addCharacter);
-            newCharacter.Id = characters.Count;
-            characters.Add(newCharacter);
             var serviceResponse = new ServiceResponse<GetCharacterDto>();
+            var newCharacter = _mapper.Map<Character>(addCharacter);
+            await _context.Characters.AddAsync(newCharacter);
+            await _context.SaveChangesAsync();
             serviceResponse.Data = _mapper.Map<GetCharacterDto>(newCharacter);
             return serviceResponse;
         }
@@ -40,15 +44,16 @@ namespace ProjectRPG.Services.CharacterService
         public async Task<ServiceResponse<List<GetCharacterDto>>> GetAll()
         {
             var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
-            serviceResponse.Data = _mapper.Map<List<GetCharacterDto>>(characters);
+            var dbCharacters = await _context.Characters.ToListAsync();
+            serviceResponse.Data = _mapper.Map<List<GetCharacterDto>>(dbCharacters);
             return serviceResponse;
         }
 
         public async Task<ServiceResponse<GetCharacterDto>> GetById(int id)
         {
-            var character = characters.SingleOrDefault(c => c.Id == id);
             var serviceResponse = new ServiceResponse<GetCharacterDto>();
-            serviceResponse.Data = _mapper.Map<GetCharacterDto>(character);
+            var dbCharacter = await _context.Characters.SingleOrDefaultAsync(c => c.Id == id);
+            serviceResponse.Data = _mapper.Map<GetCharacterDto>(dbCharacter);
             return serviceResponse;
         }
 
@@ -58,17 +63,19 @@ namespace ProjectRPG.Services.CharacterService
         {
             var serviceResponse = new ServiceResponse<GetCharacterDto>();
 
-            var foundCharacter = characters.SingleOrDefault(c => c.Id == updateCharacter.Id);
-            if (foundCharacter == null)
+            var dbCharacter = await _context.Characters.SingleOrDefaultAsync(
+                c => c.Id == updateCharacter.Id
+            );
+            if (dbCharacter == null)
             {
                 serviceResponse.Success = false;
                 serviceResponse.Message = "not found";
                 return serviceResponse;
             }
 
-            _mapper.Map(updateCharacter, foundCharacter);
-
-            serviceResponse.Data = _mapper.Map<Character, GetCharacterDto>(foundCharacter);
+            _mapper.Map(updateCharacter, dbCharacter);
+            await _context.SaveChangesAsync();
+            serviceResponse.Data = _mapper.Map<GetCharacterDto>(dbCharacter);
 
             return serviceResponse;
         }
@@ -76,14 +83,15 @@ namespace ProjectRPG.Services.CharacterService
         public async Task<ServiceResponse> Delete(int id)
         {
             var serviceResponse = new ServiceResponse();
-            var character = characters.Find(c => c.Id == id);
-            if (character == null)
+            var dbCharacter = await _context.Characters.SingleOrDefaultAsync(c => c.Id == id);
+            if (dbCharacter == null)
             {
                 serviceResponse.Success = false;
                 serviceResponse.Message = "not found";
                 return serviceResponse;
             }
-            characters.Remove(character);
+            _context.Characters.Remove(dbCharacter);
+            await _context.SaveChangesAsync();
             return serviceResponse;
         }
     }
