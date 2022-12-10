@@ -21,7 +21,8 @@ namespace ProjectRPG.MapperProfile
 
         #region User
             CreateMap<User, GetUserDto>();
-        #endregion
+            CreateMap<User, UserLoginSuccessDto>();
+      #endregion
         }
     }
 }

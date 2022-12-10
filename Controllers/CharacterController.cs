@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectRPG.Dtos.CharacterDtos;
 using ProjectRPG.Models;
@@ -10,6 +12,7 @@ using ProjectRPG.Services.CharacterService;
 
 namespace ProjectRPG.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class CharacterController : ControllerBase
@@ -32,7 +35,10 @@ namespace ProjectRPG.Controllers
         [HttpGet]
         public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> Get()
         {
-            return Ok(await _repository.GetAll());
+            int userId = int.Parse(
+                User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value
+            );
+            return Ok(await _repository.GetAll(userId));
         }
 
         [HttpPost]

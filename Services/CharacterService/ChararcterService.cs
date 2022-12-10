@@ -41,10 +41,12 @@ namespace ProjectRPG.Services.CharacterService
             return serviceResponse;
         }
 
-        public async Task<ServiceResponse<List<GetCharacterDto>>> GetAll()
+        public async Task<ServiceResponse<List<GetCharacterDto>>> GetAll(int userId)
         {
             var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
-            var dbCharacters = await _context.Characters.ToListAsync();
+            var dbCharacters = await _context.Characters
+                .Where(c => c.User.Id == userId)
+                .ToListAsync();
             serviceResponse.Data = _mapper.Map<List<GetCharacterDto>>(dbCharacters);
             return serviceResponse;
         }

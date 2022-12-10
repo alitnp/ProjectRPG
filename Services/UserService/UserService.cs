@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ProjectRPG.Data;
 using ProjectRPG.Dtos.UserDtos;
 using ProjectRPG.Models;
@@ -14,16 +17,18 @@ namespace ProjectRPG.Services.UserService
     {
         private readonly DataContext _context;
         private readonly IMapper _mapper;
+        private readonly IConfiguration _configuration;
 
-        public UserService(DataContext context, IMapper mapper)
+        public UserService(DataContext context, IMapper mapper, IConfiguration configuration)
         {
+            this._configuration = configuration;
             this._mapper = mapper;
             this._context = context;
         }
 
-        public async Task<ServiceResponse<GetUserDto>> Login(UserLoginDto userLogin)
+        public async Task<ServiceResponse<UserLoginSuccessDto>> Login(UserLoginDto userLogin)
         {
-            var serviceResponse = new ServiceResponse<GetUserDto>();
+            var serviceResponse = new ServiceResponse<UserLoginSuccessDto>();
             var dbUser = await _context.Users.SingleOrDefaultAsync(
                 u => u.Username.ToLower().Equals(userLogin.Username.ToLower())
             );
@@ -38,7 +43,8 @@ namespace ProjectRPG.Services.UserService
                 serviceResponse.Success = false;
                 serviceResponse.Message = "wrong password";
             }
-            serviceResponse.Data = _mapper.Map<GetUserDto>(dbUser);
+            serviceResponse.Data = _mapper.Map<UserLoginSuccessDto>(dbUser);
+            serviceResponse.Data.Token = CreateToken(dbUser);
             return serviceResponse;
         }
 
@@ -94,6 +100,33 @@ namespace ProjectRPG.Services.UserService
                 var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
                 return computedHash.SequenceEqual(passwordHash);
             }
+        }
+
+        private string CreateToken(User user)
+        {
+            List<Claim> claim = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Username.ToString())
+            };
+            SymmetricSecurityKey key = new SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(
+                    _configuration.GetSection("AppSetting:Token").Value
+                )
+            );
+            SigningCredentials cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
+
+            SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claim),
+                Expires = DateTime.Now.AddDays(1),
+                SigningCredentials = cred
+            };
+
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
+
+            return tokenHandler.WriteToken(token);
         }
     }
 }

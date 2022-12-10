@@ -13,6 +13,6 @@ namespace ProjectRPG.Services.UserService
 
         Task<bool> UserExists(string username);
 
-        Task<ServiceResponse<GetUserDto>> Login(UserLoginDto userLogin);
+        Task<ServiceResponse<UserLoginSuccessDto>> Login(UserLoginDto userLogin);
     }
 }
