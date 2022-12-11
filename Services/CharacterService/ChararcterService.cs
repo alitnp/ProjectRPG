@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using ProjectRPG.Common;
 using ProjectRPG.Data;
 using ProjectRPG.Dtos.CharacterDtos;
 using ProjectRPG.Models;
@@ -24,9 +26,15 @@ namespace ProjectRPG.Services.CharacterService
         };
         private readonly IMapper _mapper;
         private readonly DataContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ChararcterService(IMapper mapper, DataContext context)
+        public ChararcterService(
+            IMapper mapper,
+            DataContext context,
+            IHttpContextAccessor httpContextAccessor
+        )
         {
+            this._httpContextAccessor = httpContextAccessor;
             this._context = context;
             this._mapper = mapper;
         }
@@ -41,11 +49,11 @@ namespace ProjectRPG.Services.CharacterService
             return serviceResponse;
         }
 
-        public async Task<ServiceResponse<List<GetCharacterDto>>> GetAll(int userId)
+        public async Task<ServiceResponse<List<GetCharacterDto>>> GetAll()
         {
             var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
             var dbCharacters = await _context.Characters
-                .Where(c => c.User.Id == userId)
+                .Where(c => c.User.Id == CommonUtils.GetUserIdFromHttpContext(_httpContextAccessor))
                 .ToListAsync();
             serviceResponse.Data = _mapper.Map<List<GetCharacterDto>>(dbCharacters);
             return serviceResponse;
